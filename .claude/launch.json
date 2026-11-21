@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "web",
+      "name": "frontend",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@financy/web", "dev"],
+      "runtimeArgs": ["--filter", "@financy/frontend", "dev"],
       "port": 5173
     }
   ]

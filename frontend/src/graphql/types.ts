@@ -1,4 +1,4 @@
-// Espelha os tipos do schema GraphQL do backend (apps/backend/schema.graphql).
+// Espelha os tipos do schema GraphQL do backend (backend/schema.graphql).
 
 export type CategoryIcon =
   | 'briefcase_business'
