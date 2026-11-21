@@ -8,8 +8,8 @@ datasource db {
   provider = "postgresql"
 }
 
-// Os valores dos enums precisam bater com TRANSACTION_TYPES, TRANSACTION_STATUSES e
-// CATEGORY_STATUSES do domínio; o teste prisma-enums.spec.ts confere isso.
+// Os valores dos enums precisam bater com os arrays do domínio (TRANSACTION_TYPES,
+// TRANSACTION_STATUSES, CATEGORY_STATUSES, CATEGORY_ICONS, CATEGORY_COLORS); o teste prisma-enums.spec.ts confere isso.
 enum CategoryStatus {
   active
   deleted
@@ -17,11 +17,58 @@ enum CategoryStatus {
   @@map("category_status")
 }
 
+enum CategoryIcon {
+  briefcase_business
+  car_front
+  heart_pulse
+  piggy_bank
+  shopping_cart
+  ticket
+  tool_case
+  utensils
+  paw_print
+  house
+  gift
+  dumbbell
+  book_open
+  baggage_claim
+  mailbox
+  receipt_text
+
+  @@map("category_icon")
+}
+
+enum CategoryColor {
+  green
+  blue
+  purple
+  pink
+  red
+  orange
+  yellow
+
+  @@map("category_color")
+}
+
 enum TransactionType {
   income
   expense
 
   @@map("transaction_type")
+}
+
+enum RecurringTransactionStatus {
+  active
+  ended
+
+  @@map("recurring_transaction_status")
+}
+
+enum RecurringDayType {
+  calendar_day
+  business_day
+
+  @@map("recurring_day_type")
 }
 
 enum TransactionStatus {
@@ -38,22 +85,27 @@ model User {
   password  String
   createdAt DateTime @map("created_at") @db.Timestamptz(3)
 
-  categories   Category[]
-  transactions Transaction[]
+  categories            Category[]
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
 
   @@map("users")
 }
 
 // Uma categoria removida só muda o status, pras transações antigas continuarem apontando pra ela.
 model Category {
-  id        String         @id @db.Uuid
-  userId    String         @map("user_id") @db.Uuid
-  name      String
-  status    CategoryStatus @default(active)
-  createdAt DateTime       @map("created_at") @db.Timestamptz(3)
+  id          String         @id @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  name        String
+  description String?
+  icon        CategoryIcon
+  color       CategoryColor
+  status      CategoryStatus @default(active)
+  createdAt   DateTime       @map("created_at") @db.Timestamptz(3)
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
 
   // Alvo da FK composta em transactions.
   @@unique([id, userId], map: "categories_id_user_id_unique")
@@ -61,15 +113,18 @@ model Category {
 }
 
 model Transaction {
-  id           String            @id @db.Uuid
-  userId       String            @map("user_id") @db.Uuid
-  categoryId   String            @map("category_id") @db.Uuid
-  type         TransactionType
-  date         DateTime          @db.Timestamptz(3)
+  id                     String            @id @db.Uuid
+  userId                 String            @map("user_id") @db.Uuid
+  categoryId             String            @map("category_id") @db.Uuid
+  description            String
+  type                   TransactionType
+  date                   DateTime          @db.Timestamptz(3)
   // Em centavos (R$ 150,50 = 15050) pra evitar erro de arredondamento do ponto flutuante.
-  valueInCents Int               @map("value_in_cents")
-  status       TransactionStatus @default(active)
-  createdAt    DateTime          @map("created_at") @db.Timestamptz(3)
+  valueInCents           Int               @map("value_in_cents")
+  status                 TransactionStatus @default(active)
+  // Recorrência que gerou a transação; null quando foi lançada à mão.
+  recurringTransactionId String?           @map("recurring_transaction_id") @db.Uuid
+  createdAt              DateTime          @map("created_at") @db.Timestamptz(3)
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   // A categoria precisa ser do mesmo usuário da transação: o banco recusa
@@ -79,6 +134,37 @@ model Transaction {
   category Category @relation(fields: [categoryId, userId], references: [id, userId], onDelete: NoAction, onUpdate: NoAction, map: "transactions_category_id_user_id_fkey")
 
   // As listagens são sempre "transações do usuário X por data".
+  recurringTransaction RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
+
+  // Cada recorrência gera no máximo uma transação por dia, mesmo com requisições simultâneas.
+  @@unique([recurringTransactionId, date], map: "transactions_recurring_transaction_id_date_unique")
   @@index([userId, date], map: "transactions_user_id_date_idx")
   @@map("transactions")
+}
+
+// Transação que se repete todo mês no mesmo dia (salário, assinatura...). As transações de
+// cada mês são geradas pelo job diário; encerrar só para de gerar.
+model RecurringTransaction {
+  id           String                     @id @db.Uuid
+  userId       String                     @map("user_id") @db.Uuid
+  categoryId   String                     @map("category_id") @db.Uuid
+  description  String
+  type         TransactionType
+  // Em centavos (R$ 150,50 = 15050).
+  valueInCents Int                        @map("value_in_cents")
+  dayOfMonth   Int                        @map("day_of_month")
+  dayType      RecurringDayType           @default(calendar_day) @map("day_type")
+  startDate    DateTime                   @map("start_date") @db.Timestamptz(3)
+  nextDueDate  DateTime                   @map("next_due_date") @db.Timestamptz(3)
+  status       RecurringTransactionStatus @default(active)
+  createdAt    DateTime                   @map("created_at") @db.Timestamptz(3)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Mesma regra das transações: a categoria precisa ser do mesmo usuário.
+  category     Category      @relation(fields: [categoryId, userId], references: [id, userId], onDelete: NoAction, onUpdate: NoAction, map: "recurring_transactions_category_id_user_id_fkey")
+  transactions Transaction[]
+
+  @@index([userId, status], map: "recurring_transactions_user_id_status_idx")
+  @@index([status, nextDueDate, id], map: "recurring_transactions_due_idx")
+  @@map("recurring_transactions")
 }

@@ -4,10 +4,12 @@ import { Transaction } from '../transaction';
 
 const props = {
   userId: uuidv7(),
+  description: 'Jantar',
   categoryId: uuidv7(),
   date: new Date('2026-11-21T12:00:00.000Z'),
   valueInCents: 15050,
   status: 'active' as const,
+  recurringTransactionId: null,
 };
 
 describe('Transaction unit test', () => {

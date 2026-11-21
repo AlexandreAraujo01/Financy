@@ -11,12 +11,12 @@ export class CreateCategoryUseCase extends UseCase<CreateCategoryInput, Category
   }
 
   async execute(input: CreateCategoryInput): Promise<Category> {
-    const { userId, name } = validate(createCategoryInputSchema, input);
+    const { userId, name, ...fields } = validate(createCategoryInputSchema, input);
 
     if (await this.categories.findActiveByName(userId, name)) {
       throw new CategoryAlreadyExistsError(name);
     }
 
-    return this.categories.create(Category.create({ userId, name, status: 'active' }));
+    return this.categories.create(Category.create({ userId, name, ...fields, status: 'active' }));
   }
 }

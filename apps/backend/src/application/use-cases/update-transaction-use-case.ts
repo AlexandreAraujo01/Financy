@@ -20,7 +20,7 @@ export class UpdateTransactionUseCase extends UseCase<UpdateTransactionInput, Tr
   }
 
   async execute(input: UpdateTransactionInput): Promise<Transaction> {
-    const { userId, transactionId, categoryId, type, date, valueInCents } = validate(
+    const { userId, transactionId, categoryId, description, type, date, valueInCents } = validate(
       updateTransactionInputSchema,
       input,
     );
@@ -36,6 +36,7 @@ export class UpdateTransactionUseCase extends UseCase<UpdateTransactionInput, Tr
       await findOwnedCategory(this.categories, userId, categoryId);
       changes.categoryId = categoryId;
     }
+    if (description != null) changes.description = description;
     if (type != null) changes.type = type;
     if (date != null) changes.date = date;
     if (valueInCents != null) changes.valueInCents = valueInCents;

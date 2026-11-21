@@ -14,7 +14,7 @@ describe('PrismaCategoryRepository (e2e)', () => {
   let userId: string;
 
   const makeCategory = (name = 'Mercado', owner = userId) =>
-    Category.create({ userId: owner, name, status: 'active' });
+    Category.create({ description: null, icon: 'utensils', color: 'blue', userId: owner, name, status: 'active' });
 
   // Apagar os usuários leva as categorias junto (on delete cascade).
   beforeEach(async () => {

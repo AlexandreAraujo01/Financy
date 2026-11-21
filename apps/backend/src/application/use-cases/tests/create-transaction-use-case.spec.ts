@@ -19,6 +19,7 @@ let sut: CreateTransactionUseCase;
 const input = () => ({
   userId: userA,
   categoryId: categoryA.id,
+  description: 'Jantar no restaurante',
   type: 'expense' as const,
   date: new Date('2026-11-21T12:00:00.000Z'),
   valueInCents: 15050,
@@ -28,10 +29,10 @@ beforeEach(async () => {
   transactionRepo = new InMemoryTransactionRepository();
   categoryRepo = new InMemoryCategoryRepository();
   categoryA = await categoryRepo.create(
-    Category.create({ userId: userA, name: 'Mercado', status: 'active' }),
+    Category.create({ description: null, icon: 'utensils', color: 'blue', userId: userA, name: 'Mercado', status: 'active' }),
   );
   categoryB = await categoryRepo.create(
-    Category.create({ userId: userB, name: 'Mercado', status: 'active' }),
+    Category.create({ description: null, icon: 'utensils', color: 'blue', userId: userB, name: 'Mercado', status: 'active' }),
   );
   sut = new CreateTransactionUseCase(transactionRepo, categoryRepo);
 });
@@ -76,6 +77,8 @@ describe('CreateTransactionUseCase unit test', () => {
     ['valueInCents', { valueInCents: 2_147_483_648 }],
     ['type', { type: 'bill' }],
     ['date', { date: 'not-a-date' }],
+    ['description', { description: '   ' }],
+    ['description', { description: 'a'.repeat(101) }],
   ])('should throw InvalidInputError for an invalid %s', async (path, override) => {
     const error = await sut
       .execute({ ...input(), ...(override as object) })
@@ -84,5 +87,11 @@ describe('CreateTransactionUseCase unit test', () => {
     expect(error).toBeInstanceOf(InvalidInputError);
     expect(error.issues).toEqual([expect.objectContaining({ path })]);
     expect(transactionRepo.items.size).toBe(0);
+  });
+
+  it('should trim the description', async () => {
+    const transaction = await sut.execute({ ...input(), description: '  Jantar  ' });
+
+    expect(transaction.toSnapshot().description).toBe('Jantar');
   });
 });

@@ -6,6 +6,8 @@ import { TransactionTypeEnum } from "../models/transaction-type.enum"
 export class CreateTransactionInput {
     @Field(() => ID)
     categoryId!: string
+    @Field(() => String)
+    description!: string
     @Field(() => TransactionTypeEnum)
     type!: TransactionType
     @Field(() => Date)
@@ -19,6 +21,8 @@ export class CreateTransactionInput {
 export class UpdateTransactionInput {
     @Field(() => ID, { nullable: true })
     categoryId?: string
+    @Field(() => String, { nullable: true })
+    description?: string
     @Field(() => TransactionTypeEnum, { nullable: true })
     type?: TransactionType
     @Field(() => Date, { nullable: true })

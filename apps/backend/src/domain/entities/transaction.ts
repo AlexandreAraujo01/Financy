@@ -7,7 +7,7 @@ export class Transaction extends Entity<ITransaction> {
   }
 
   static create(data: ITransaction, id?: string, createdAt?: Date) {
-    return new Transaction(data, id, createdAt);
+    return new Transaction({ ...data, description: data.description.trim() }, id, createdAt);
   }
 
   get isActive(): boolean {

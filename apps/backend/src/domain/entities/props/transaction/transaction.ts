@@ -9,9 +9,12 @@ export type TransactionStatus = (typeof TRANSACTION_STATUSES)[number];
 export interface ITransaction {
   userId: string;
   categoryId: string;
+  description: string;
   type: TransactionType;
   date: Date;
   // Em centavos (R$ 150,50 = 15050).
   valueInCents: number;
   status: TransactionStatus;
+  // Recorrência que gerou a transação; null quando foi lançada à mão.
+  recurringTransactionId: string | null;
 }

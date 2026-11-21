@@ -21,7 +21,7 @@ let transaction: Transaction;
 let sut: UpdateTransactionUseCase;
 
 const createCategory = (userId: string, name: string) =>
-  categoryRepo.create(Category.create({ userId, name, status: 'active' }));
+  categoryRepo.create(Category.create({ description: null, icon: 'utensils', color: 'blue', userId, name, status: 'active' }));
 
 beforeEach(async () => {
   transactionRepo = new InMemoryTransactionRepository();
@@ -30,8 +30,7 @@ beforeEach(async () => {
   lazer = await createCategory(userA, 'Lazer');
   categoryB = await createCategory(userB, 'Mercado');
   transaction = await transactionRepo.create(
-    Transaction.create({
-      userId: userA,
+    Transaction.create({ recurringTransactionId: null, description: 'Compra', userId: userA,
       categoryId: mercado.id,
       type: 'expense',
       date: new Date('2026-11-21T12:00:00.000Z'),
@@ -48,6 +47,7 @@ describe('UpdateTransactionUseCase unit test', () => {
       userId: userA,
       transactionId: transaction.id,
       categoryId: lazer.id,
+      description: 'Show',
       type: 'income',
       date: '2026-12-01T00:00:00.000Z',
       valueInCents: 999,
@@ -56,6 +56,7 @@ describe('UpdateTransactionUseCase unit test', () => {
     expect(updated.toSnapshot()).toMatchObject({
       id: transaction.id,
       categoryId: lazer.id,
+      description: 'Show',
       type: 'income',
       date: new Date('2026-12-01T00:00:00.000Z'),
       valueInCents: 999,
@@ -68,6 +69,7 @@ describe('UpdateTransactionUseCase unit test', () => {
       userId: userA,
       transactionId: transaction.id,
       categoryId: null,
+      description: null,
       type: null,
       date: null,
       valueInCents: 100,

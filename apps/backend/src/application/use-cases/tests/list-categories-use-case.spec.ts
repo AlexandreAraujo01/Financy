@@ -12,7 +12,7 @@ let categoryRepo: InMemoryCategoryRepository;
 let sut: ListCategoriesUseCase;
 
 const createCategory = (userId: string, name: string, status: 'active' | 'deleted' = 'active') =>
-  categoryRepo.create(Category.create({ userId, name, status }));
+  categoryRepo.create(Category.create({ description: null, icon: 'utensils', color: 'blue', userId, name, status }));
 
 beforeEach(() => {
   categoryRepo = new InMemoryCategoryRepository();

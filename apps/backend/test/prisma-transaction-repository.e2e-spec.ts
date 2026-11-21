@@ -21,8 +21,7 @@ describe('PrismaTransactionRepository (e2e)', () => {
   let categoryB: Category;
 
   const makeTransaction = (userId = userA.id, categoryId = categoryA.id) =>
-    Transaction.create({
-      userId,
+    Transaction.create({ recurringTransactionId: null, description: 'Compra', userId,
       categoryId,
       type: 'expense',
       date: new Date('2026-11-21T12:00:00.000Z'),
@@ -40,10 +39,10 @@ describe('PrismaTransactionRepository (e2e)', () => {
       User.create({ name: 'Bia', email: 'bia@financy.com', password: 'hashed' }),
     );
     categoryA = await categoryRepo.create(
-      Category.create({ userId: userA.id, name: 'Mercado', status: 'active' }),
+      Category.create({ description: null, icon: 'utensils', color: 'blue', userId: userA.id, name: 'Mercado', status: 'active' }),
     );
     categoryB = await categoryRepo.create(
-      Category.create({ userId: userB.id, name: 'Mercado', status: 'active' }),
+      Category.create({ description: null, icon: 'utensils', color: 'blue', userId: userB.id, name: 'Mercado', status: 'active' }),
     );
   });
 

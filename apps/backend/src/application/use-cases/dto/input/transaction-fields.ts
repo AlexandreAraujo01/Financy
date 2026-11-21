@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { TRANSACTION_TYPES } from '@/domain/entities/props/transaction/transaction';
 
 export const transactionId = z.uuid();
+export const transactionDescription = z.string().trim().min(1).max(100);
 export const transactionType = z.enum(TRANSACTION_TYPES);
 // Aceita Date ou string ISO (o que chega do GraphQL).
 export const transactionDate = z.coerce.date();

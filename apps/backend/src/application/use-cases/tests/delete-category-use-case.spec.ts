@@ -15,7 +15,7 @@ let sut: DeleteCategoryUseCase;
 beforeEach(async () => {
   categoryRepo = new InMemoryCategoryRepository();
   category = await categoryRepo.create(
-    Category.create({ userId, name: 'Mercado', status: 'active' }),
+    Category.create({ description: null, icon: 'utensils', color: 'blue', userId, name: 'Mercado', status: 'active' }),
   );
   sut = new DeleteCategoryUseCase(categoryRepo);
 });

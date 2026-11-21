@@ -10,10 +10,14 @@ import { AuthResolver } from './infra/graphql/auth.resolver';
 import { UserResolver } from './infra/graphql/user.resolver';
 import { CategoryResolver } from './infra/graphql/category.resolver';
 import { TransactionResolver } from './infra/graphql/transaction.resolver';
+import { RecurringTransactionResolver } from './infra/graphql/recurring-transaction.resolver';
 import { createPrismaClient } from './infra/database/prisma/prisma';
 import { PrismaUserRepository } from './infra/database/prisma/repositories/prisma-user-repository';
 import { PrismaCategoryRepository } from './infra/database/prisma/repositories/prisma-category-repository';
 import { PrismaTransactionRepository } from './infra/database/prisma/repositories/prisma-transaction-repository';
+import { PrismaRecurringTransactionRepository } from './infra/database/prisma/repositories/prisma-recurring-transaction-repository';
+import { SystemClock } from './infra/clock/system-clock';
+import { RecurringTransactionsGenerator } from './application/services/recurring-transactions-generator';
 import { formatError } from './infra/graphql/format-error';
 import { authChecker } from './infra/graphql/auth/auth-checker';
 import { GraphQLContext, makeContext } from './infra/graphql/auth/context';
@@ -30,12 +34,17 @@ import { CreateTransactionUseCase } from './application/use-cases/create-transac
 import { UpdateTransactionUseCase } from './application/use-cases/update-transaction-use-case';
 import { DeleteTransactionUseCase } from './application/use-cases/delete-transaction-use-case';
 import { ListTransactionsUseCase } from './application/use-cases/list-transactions-use-case';
+import { CreateRecurringTransactionUseCase } from './application/use-cases/create-recurring-transaction-use-case';
+import { UpdateRecurringTransactionUseCase } from './application/use-cases/update-recurring-transaction-use-case';
+import { EndRecurringTransactionUseCase } from './application/use-cases/end-recurring-transaction-use-case';
+import { ListRecurringTransactionsUseCase } from './application/use-cases/list-recurring-transactions-use-case';
 import { BcryptPasswordHasher } from './infra/cryptography/bcrypt-password-hasher';
 import { JwtTokenSigner } from './infra/cryptography/jwt-token-signer';
+import { registerRecurringTransactionsJob } from './infra/jobs/recurring-transactions-job';
 
 async function bootstrap(){
     const fastify = Fastify({logger: true})
-    await fastify.register(cors, { origin: [`http://localhost:${env.PORT}`] });
+    await fastify.register(cors, { origin: [env.WEB_URL] });
 
     const prisma = createPrismaClient(env.DATABASE_URL)
     fastify.addHook('onClose', () => prisma.$disconnect())
@@ -43,6 +52,13 @@ async function bootstrap(){
     const userRepository = new PrismaUserRepository(prisma)
     const categoryRepository = new PrismaCategoryRepository(prisma)
     const transactionRepository = new PrismaTransactionRepository(prisma)
+    const recurringTransactionRepository = new PrismaRecurringTransactionRepository(prisma)
+    const recurringTransactionsGenerator = new RecurringTransactionsGenerator(
+        recurringTransactionRepository,
+        transactionRepository,
+        new SystemClock(),
+    )
+    registerRecurringTransactionsJob(fastify, recurringTransactionsGenerator)
     const passwordHasher = new BcryptPasswordHasher()
     const tokenSigner = new JwtTokenSigner(env.JWT_SECRET, env.JWT_EXPIRES_IN)
     const createUser = new CreateUserUseCase(userRepository, passwordHasher, tokenSigner)
@@ -58,15 +74,29 @@ async function bootstrap(){
     const updateTransaction = new UpdateTransactionUseCase(transactionRepository, categoryRepository)
     const deleteTransaction = new DeleteTransactionUseCase(transactionRepository)
     const listTransactions = new ListTransactionsUseCase(transactionRepository)
+    const createRecurringTransaction = new CreateRecurringTransactionUseCase(
+        recurringTransactionRepository,
+        categoryRepository,
+        recurringTransactionsGenerator,
+    )
+    const updateRecurringTransaction = new UpdateRecurringTransactionUseCase(recurringTransactionRepository, categoryRepository)
+    const endRecurringTransaction = new EndRecurringTransactionUseCase(recurringTransactionRepository)
+    const listRecurringTransactions = new ListRecurringTransactionsUseCase(recurringTransactionRepository)
     const resolvers = [
         new AuthResolver(createUser, loginUser),
         new UserResolver(findUser, updateUser, deleteUser),
         new CategoryResolver(createCategory, updateCategory, deleteCategory, listCategories),
         new TransactionResolver(createTransaction, updateTransaction, deleteTransaction, listTransactions),
+        new RecurringTransactionResolver(
+            createRecurringTransaction,
+            updateRecurringTransaction,
+            endRecurringTransaction,
+            listRecurringTransactions,
+        ),
     ]
 
     const schema = await buildSchema({
-        resolvers: [AuthResolver, UserResolver, CategoryResolver, TransactionResolver],
+        resolvers: [AuthResolver, UserResolver, CategoryResolver, TransactionResolver, RecurringTransactionResolver],
         container: { get: (cls) => resolvers.find((resolver) => resolver instanceof cls) },
         authChecker,
         validate: false,
@@ -83,7 +113,15 @@ async function bootstrap(){
 
     fastify.register(helloRoutes)
     await fastify.register(fastifyApollo(apollo), { context: makeContext(tokenSigner) });
-    fastify.listen({port: env.PORT}, () => console.log(`rodando na porta: ${env.PORT}`))
+    await fastify.listen({port: env.PORT})
+    for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+        process.once(signal, () => {
+            fastify.close().catch((err) => {
+                fastify.log.error({ err }, 'Falha ao encerrar o servidor')
+                process.exitCode = 1
+            })
+        })
+    }
 }
 
 

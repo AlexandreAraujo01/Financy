@@ -22,6 +22,6 @@ export class CreateTransactionUseCase extends UseCase<CreateTransactionInput, Tr
 
     await findOwnedCategory(this.categories, data.userId, data.categoryId);
 
-    return this.transactions.create(Transaction.create({ ...data, status: 'active' }));
+    return this.transactions.create(Transaction.create({ ...data, status: 'active', recurringTransactionId: null }));
   }
 }

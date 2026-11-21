@@ -4,6 +4,7 @@ import { CategoryAlreadyExistsError } from '@/domain/errors/category-already-exi
 import { CategoryNotFoundError } from '@/domain/errors/category-not-found-error';
 import { InvalidCredentialsError } from '@/domain/errors/invalid-credentials-error';
 import { InvalidInputError } from '@/domain/errors/invalid-input-error';
+import { RecurringTransactionNotFoundError } from '@/domain/errors/recurring-transaction-not-found-error';
 import { TransactionNotFoundError } from '@/domain/errors/transaction-not-found-error';
 import { UserAlreadyExistsError } from '@/domain/errors/user-already-exists-error';
 import { UserNotFoundError } from '@/domain/errors/user-not-found-error';
@@ -28,7 +29,8 @@ export function formatError(
   }
   if (original instanceof UserNotFoundError ||
     original instanceof CategoryNotFoundError ||
-    original instanceof TransactionNotFoundError) {
+    original instanceof TransactionNotFoundError ||
+    original instanceof RecurringTransactionNotFoundError) {
     return { ...formatted, extensions: { ...extensions, code: 'NOT_FOUND' } };
   }
 

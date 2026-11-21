@@ -18,6 +18,21 @@ export class InMemoryTransactionRepository
     return Promise.resolve(transactions);
   }
 
+  // Imita o índice único (recorrência, data) do banco.
+  async createFromRecurrence(transaction: Transaction): Promise<boolean> {
+    const { recurringTransactionId, date } = transaction.toSnapshot();
+    const exists = [...this.items.values()].some((item) => {
+      const snapshot = item.toSnapshot();
+      return (
+        snapshot.recurringTransactionId === recurringTransactionId &&
+        snapshot.date.getTime() === date.getTime()
+      );
+    });
+    if (exists) return false;
+    await this.create(transaction);
+    return true;
+  }
+
   protected build(props: ITransaction, id: string, createdAt: Date): Transaction {
     return Transaction.create(props, id, createdAt);
   }

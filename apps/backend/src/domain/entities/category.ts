@@ -7,7 +7,9 @@ export class Category extends Entity<ICategory> {
   }
 
   static create(data: ICategory, id?: string, createdAt?: Date) {
-    return new Category({ ...data, name: data.name.trim() }, id, createdAt);
+    // Descrição vazia vira null, pra "sem descrição" ter um valor só.
+    const description = data.description?.trim() || null;
+    return new Category({ ...data, name: data.name.trim(), description }, id, createdAt);
   }
 
   get isActive(): boolean {

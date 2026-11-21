@@ -8,19 +8,65 @@ type AuthOutput {
   user: UserModel!
 }
 
+enum CategoryColor {
+  blue
+  green
+  orange
+  pink
+  purple
+  red
+  yellow
+}
+
+enum CategoryIcon {
+  baggage_claim
+  book_open
+  briefcase_business
+  car_front
+  dumbbell
+  gift
+  heart_pulse
+  house
+  mailbox
+  paw_print
+  piggy_bank
+  receipt_text
+  shopping_cart
+  ticket
+  tool_case
+  utensils
+}
+
 type CategoryModel {
+  color: CategoryColor!
   createdAt: DateTimeISO!
+  description: String
+  icon: CategoryIcon!
   id: ID!
   name: String!
 }
 
 input CreateCategoryInput {
+  color: CategoryColor!
+  description: String
+  icon: CategoryIcon!
   name: String!
+}
+
+input CreateRecurringTransactionInput {
+  categoryId: ID!
+  dayOfMonth: Int!
+  dayType: RecurringDayType! = calendar_day
+  description: String!
+  startDate: DateTimeISO!
+  type: TransactionType!
+  valueInCents: Int!
 }
 
 input CreateTransactionInput {
   categoryId: ID!
   date: DateTimeISO!
+  description: String!
   type: TransactionType!
   valueInCents: Int!
 }
@@ -37,21 +83,43 @@ input LoginInput {
 
 type Mutation {
   createCategory(data: CreateCategoryInput!): CategoryModel!
+  createRecurringTransaction(data: CreateRecurringTransactionInput!): RecurringTransactionModel!
   createTransaction(data: CreateTransactionInput!): TransactionModel!
   deleteCategory(id: ID!): CategoryModel!
   deleteMe: UserModel!
   deleteTransaction(id: ID!): TransactionModel!
+  endRecurringTransaction(id: ID!): RecurringTransactionModel!
   login(data: LoginInput!): AuthOutput!
   register(data: RegisterInput!): AuthOutput!
   updateCategory(data: UpdateCategoryInput!, id: ID!): CategoryModel!
   updateMe(data: UpdateUserInput!): UserModel!
+  updateRecurringTransaction(data: UpdateRecurringTransactionInput!, id: ID!): RecurringTransactionModel!
   updateTransaction(data: UpdateTransactionInput!, id: ID!): TransactionModel!
 }
 
 type Query {
   categories: [CategoryModel!]!
   me: UserModel!
+  recurringTransactions: [RecurringTransactionModel!]!
   transactions: [TransactionModel!]!
+}
+
+enum RecurringDayType {
+  business_day
+  calendar_day
+}
+
+type RecurringTransactionModel {
+  categoryId: ID!
+  createdAt: DateTimeISO!
+  dayOfMonth: Int!
+  dayType: RecurringDayType!
+  description: String!
+  id: ID!
+  nextDueDate: DateTimeISO!
+  startDate: DateTimeISO!
+  type: TransactionType!
+  valueInCents: Int!
 }
 
 input RegisterInput {
@@ -64,7 +132,9 @@ type TransactionModel {
   categoryId: ID!
   createdAt: DateTimeISO!
   date: DateTimeISO!
+  description: String!
   id: ID!
+  recurringTransactionId: ID
   type: TransactionType!
   valueInCents: Int!
 }
@@ -75,12 +145,25 @@ enum TransactionType {
 }
 
 input UpdateCategoryInput {
+  color: CategoryColor!
+  description: String
+  icon: CategoryIcon!
   name: String!
+}
+
+input UpdateRecurringTransactionInput {
+  categoryId: ID
+  dayOfMonth: Int
+  dayType: RecurringDayType
+  description: String
+  type: TransactionType
+  valueInCents: Int
 }
 
 input UpdateTransactionInput {
   categoryId: ID
   date: DateTimeISO
+  description: String
   type: TransactionType
   valueInCents: Int
 }

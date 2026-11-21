@@ -12,7 +12,7 @@ export class UpdateCategoryUseCase extends UseCase<UpdateCategoryInput, Category
   }
 
   async execute(input: UpdateCategoryInput): Promise<Category> {
-    const { userId, categoryId, name } = validate(updateCategoryInputSchema, input);
+    const { userId, categoryId, name, ...fields } = validate(updateCategoryInputSchema, input);
 
     const category = await this.categories.find(categoryId);
     // Categoria de outro usuário responde como inexistente, pra não revelar que existe.
@@ -25,7 +25,7 @@ export class UpdateCategoryUseCase extends UseCase<UpdateCategoryInput, Category
       throw new CategoryAlreadyExistsError(name);
     }
 
-    const updated = await this.categories.update({ name }, categoryId);
+    const updated = await this.categories.update({ name, ...fields }, categoryId);
     if (!updated) {
       throw new CategoryNotFoundError(categoryId);
     }

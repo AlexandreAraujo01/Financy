@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { uuidv7 } from 'uuidv7';
+import { InMemoryRecurringTransactionRepository } from '@test/repositories/in-memory-recurring-transaction-repository';
 import { InMemoryTransactionRepository } from '@test/repositories/in-memory-transaction-repository';
+import { RecurringTransaction } from '@/domain/entities/recurring-transaction';
 import { Transaction } from '@/domain/entities/transaction';
 import { InvalidInputError } from '@/domain/errors/invalid-input-error';
 import { ListTransactionsUseCase } from '../list-transactions-use-case';
@@ -9,6 +11,7 @@ const userA = uuidv7();
 const userB = uuidv7();
 
 let transactionRepo: InMemoryTransactionRepository;
+let recurrenceRepo: InMemoryRecurringTransactionRepository;
 let sut: ListTransactionsUseCase;
 
 const createTransaction = (
@@ -18,8 +21,7 @@ const createTransaction = (
   status: 'active' | 'deleted' = 'active',
 ) =>
   transactionRepo.create(
-    Transaction.create({
-      userId,
+    Transaction.create({ recurringTransactionId: null, description: 'Compra', userId,
       categoryId: uuidv7(),
       type: 'expense',
       date: new Date(date),
@@ -30,6 +32,7 @@ const createTransaction = (
 
 beforeEach(() => {
   transactionRepo = new InMemoryTransactionRepository();
+  recurrenceRepo = new InMemoryRecurringTransactionRepository();
   sut = new ListTransactionsUseCase(transactionRepo);
 });
 
@@ -52,5 +55,28 @@ describe('ListTransactionsUseCase unit test', () => {
 
   it('should throw InvalidInputError for a user id that is not a uuid', async () => {
     await expect(sut.execute({ userId: '123' })).rejects.toBeInstanceOf(InvalidInputError);
+  });
+
+  it('should only read transactions without generating or changing due recurrences', async () => {
+    await recurrenceRepo.create(
+      RecurringTransaction.create({
+        userId: userA,
+        categoryId: uuidv7(),
+        description: 'Salário',
+        type: 'income',
+        valueInCents: 500000,
+        dayOfMonth: 5,
+        startDate: new Date('2026-10-01T12:00:00.000Z'),
+        nextDueDate: new Date('2026-10-05T12:00:00.000Z'),
+        status: 'active',
+      }),
+    );
+
+    const transactions = await sut.execute({ userId: userA });
+
+    expect(transactions).toEqual([]);
+    expect(transactionRepo.items.size).toBe(0);
+    expect([...recurrenceRepo.items.values()][0]?.toSnapshot().nextDueDate)
+      .toEqual(new Date('2026-10-05T12:00:00.000Z'));
   });
 });

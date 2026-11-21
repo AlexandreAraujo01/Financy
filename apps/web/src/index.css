@@ -1,0 +1,152 @@
+@import 'tailwindcss';
+
+/* Tokens do Style Guide do Figma (Financy). */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand: #1f6f43;
+  --color-brand-dark: #185a36;
+  --color-brand-foreground: #1f6f43;
+  --color-surface: #ffffff;
+
+  --color-gray-100: #f8f9fa;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #111827;
+
+  --color-green-light: #e0fae9;
+  --color-green-base: #16a34a;
+  --color-green-dark: #15803d;
+  --color-blue-light: #dbeafe;
+  --color-blue-base: #2563eb;
+  --color-blue-dark: #1d4ed8;
+  --color-purple-light: #f3e8ff;
+  --color-purple-base: #9333ea;
+  --color-purple-dark: #7e22ce;
+  --color-pink-light: #fce7f3;
+  --color-pink-base: #db2777;
+  --color-pink-dark: #be185d;
+  --color-red-light: #fee2e2;
+  --color-red-base: #dc2626;
+  --color-red-dark: #b91c1c;
+  --color-orange-light: #ffedd5;
+  --color-orange-base: #ea580c;
+  --color-orange-dark: #c2410c;
+  --color-yellow-light: #f7f3ca;
+  --color-yellow-base: #ca8a04;
+  --color-yellow-dark: #a16207;
+}
+
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-surface: #19231e;
+  --color-brand-foreground: #76d49b;
+  --color-gray-100: #101713;
+  --color-gray-200: #2b3931;
+  --color-gray-300: #405148;
+  --color-gray-400: #91a298;
+  --color-gray-500: #a2b1a8;
+  --color-gray-600: #b6c3bb;
+  --color-gray-700: #d3ded7;
+  --color-gray-800: #f0f5f2;
+
+  --color-green-light: #193d2a;
+  --color-green-base: #4ade80;
+  --color-green-dark: #86efac;
+  --color-blue-light: #1c314e;
+  --color-blue-base: #60a5fa;
+  --color-blue-dark: #93c5fd;
+  --color-purple-light: #342346;
+  --color-purple-base: #c084fc;
+  --color-purple-dark: #d8b4fe;
+  --color-pink-light: #452238;
+  --color-pink-base: #f472b6;
+  --color-pink-dark: #f9a8d4;
+  --color-red-light: #482727;
+  --color-red-base: #f87171;
+  --color-red-dark: #fca5a5;
+  --color-orange-light: #432f20;
+  --color-orange-base: #fb923c;
+  --color-orange-dark: #fdba74;
+  --color-yellow-light: #3c351d;
+  --color-yellow-base: #facc15;
+  --color-yellow-dark: #fde047;
+}
+
+body {
+  @apply m-0 min-w-[320px] bg-gray-100 font-sans text-gray-800 antialiased;
+}
+
+button, a, input, select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-foreground);
+  outline-offset: 3px;
+}
+
+select option {
+  background: var(--color-surface);
+  color: var(--color-gray-800);
+}
+
+[data-theme='dark'] .financy-logo {
+  filter: brightness(0) saturate(100%) invert(80%) sepia(16%) saturate(1050%) hue-rotate(88deg) brightness(93%) contrast(88%);
+}
+
+/* A mesma tabela vira uma lista de cards, sem duplicar os dados e as ações. */
+@media (width < 64rem) {
+  .responsive-table {
+    @apply block min-w-0;
+  }
+
+  .responsive-table thead {
+    @apply hidden;
+  }
+
+  .responsive-table tbody {
+    @apply block;
+  }
+
+  .responsive-table tr {
+    @apply grid h-auto grid-cols-2 items-center gap-x-4 gap-y-4 p-4;
+  }
+
+  .responsive-table td {
+    @apply min-w-0 px-0 text-left;
+  }
+
+  .responsive-table td::before {
+    content: attr(data-label);
+    @apply mb-1 block text-xs font-medium text-gray-500;
+  }
+
+  .responsive-table td:first-child {
+    @apply col-span-2 pb-1;
+  }
+
+  .responsive-table td:first-child::before,
+  .responsive-table td:last-child::before {
+    @apply hidden;
+  }
+
+  .responsive-table td:last-child {
+    @apply col-span-2 border-t border-gray-200 pt-3;
+  }
+}
+
+@media (pointer: coarse) {
+  button, a[aria-label] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

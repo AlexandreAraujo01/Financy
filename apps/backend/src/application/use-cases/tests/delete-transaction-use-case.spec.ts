@@ -15,8 +15,7 @@ let sut: DeleteTransactionUseCase;
 beforeEach(async () => {
   transactionRepo = new InMemoryTransactionRepository();
   transaction = await transactionRepo.create(
-    Transaction.create({
-      userId,
+    Transaction.create({ recurringTransactionId: null, description: 'Compra', userId,
       categoryId: uuidv7(),
       type: 'expense',
       date: new Date('2026-11-21T12:00:00.000Z'),

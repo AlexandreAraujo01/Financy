@@ -3,7 +3,7 @@ import { ITransaction } from '@/domain/entities/props/transaction/transaction';
 import { CategoryNotFoundError } from '@/domain/errors/category-not-found-error';
 import { TransactionRepository } from '@/ports/transaction-repository';
 import type { PrismaClient, Transaction as TransactionRow } from '../generated/client';
-import { isForeignKeyViolation, isRecordNotFound } from '../prisma';
+import { isForeignKeyViolation, isRecordNotFound, isUniqueViolation } from '../prisma';
 
 export class PrismaTransactionRepository implements TransactionRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -16,6 +16,19 @@ export class PrismaTransactionRepository implements TransactionRepository {
       throw this.translate(error, data.categoryId);
     }
     return transaction;
+  }
+
+  async createFromRecurrence(transaction: Transaction): Promise<boolean> {
+    try {
+      await this.create(transaction);
+      return true;
+    } catch (error) {
+      // Aquele dia da recorrência já foi gerado (talvez por outra requisição agora mesmo).
+      if (isUniqueViolation(error, 'transactions_recurring_transaction_id_date_unique')) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   async find(id: string): Promise<Transaction | null> {
