@@ -1,39 +1,24 @@
 {
   "name": "financy",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "packageManager": "pnpm@11.13.1",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx --watch ./src/index.ts"
+    "dev": "pnpm --parallel --recursive run dev",
+    "dev:backend": "pnpm --filter @financy/backend dev",
+    "build": "pnpm --recursive run build",
+    "typecheck": "pnpm --recursive run typecheck",
+    "db:up": "docker compose --env-file apps/backend/.env up -d --wait",
+    "db:down": "docker compose --env-file apps/backend/.env down",
+    "test": "pnpm --recursive run test"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AlexandreAraujo01/Financy.git"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/AlexandreAraujo01/Financy/issues"
   },
-  "homepage": "https://github.com/AlexandreAraujo01/Financy#readme",
-  "devDependencies": {
-    "@types/node": "^26.6.6",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
-  },
-  "dependencies": {
-    "@apollo/server": "^5.5.2",
-    "@as-integrations/fastify": "^3.1.0",
-    "@fastify/cors": "^11.4.3",
-    "dotenv": "^18.0.10",
-    "fastify": "^5.12.8",
-    "graphql": "^16.15.0",
-    "reflect-metadata": "^0.2.2",
-    "type-graphql": "^2.0.0-rc.3",
-    "uuidv7": "^1.2.1",
-    "zod": "^4.6.7"
-  }
+  "homepage": "https://github.com/AlexandreAraujo01/Financy#readme"
 }

@@ -1,0 +1,84 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/infra/database/prisma/generated"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Os valores dos enums precisam bater com TRANSACTION_TYPES, TRANSACTION_STATUSES e
+// CATEGORY_STATUSES do domínio; o teste prisma-enums.spec.ts confere isso.
+enum CategoryStatus {
+  active
+  deleted
+
+  @@map("category_status")
+}
+
+enum TransactionType {
+  income
+  expense
+
+  @@map("transaction_type")
+}
+
+enum TransactionStatus {
+  active
+  deleted
+
+  @@map("transaction_status")
+}
+
+model User {
+  id        String   @id @db.Uuid
+  name      String
+  email     String   @unique(map: "users_email_unique")
+  password  String
+  createdAt DateTime @map("created_at") @db.Timestamptz(3)
+
+  categories   Category[]
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+// Uma categoria removida só muda o status, pras transações antigas continuarem apontando pra ela.
+model Category {
+  id        String         @id @db.Uuid
+  userId    String         @map("user_id") @db.Uuid
+  name      String
+  status    CategoryStatus @default(active)
+  createdAt DateTime       @map("created_at") @db.Timestamptz(3)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  // Alvo da FK composta em transactions.
+  @@unique([id, userId], map: "categories_id_user_id_unique")
+  @@map("categories")
+}
+
+model Transaction {
+  id           String            @id @db.Uuid
+  userId       String            @map("user_id") @db.Uuid
+  categoryId   String            @map("category_id") @db.Uuid
+  type         TransactionType
+  date         DateTime          @db.Timestamptz(3)
+  // Em centavos (R$ 150,50 = 15050) pra evitar erro de arredondamento do ponto flutuante.
+  valueInCents Int               @map("value_in_cents")
+  status       TransactionStatus @default(active)
+  createdAt    DateTime          @map("created_at") @db.Timestamptz(3)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // A categoria precisa ser do mesmo usuário da transação: o banco recusa
+  // uma transação do usuário A apontando pra categoria do usuário B.
+  // Fica em NoAction (não Restrict) pra checar só no fim do comando: assim
+  // apagar o usuário leva categorias e transações juntas pelo cascade.
+  category Category @relation(fields: [categoryId, userId], references: [id, userId], onDelete: NoAction, onUpdate: NoAction, map: "transactions_category_id_user_id_fkey")
+
+  // As listagens são sempre "transações do usuário X por data".
+  @@index([userId, date], map: "transactions_user_id_date_idx")
+  @@map("transactions")
+}

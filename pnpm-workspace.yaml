@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: true
+  "@apollo/protobufjs": false
+  # Baixa o schema engine que o prisma migrate usa.
+  "@prisma/engines": true
+  prisma: true

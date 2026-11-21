@@ -1,0 +1,2 @@
+# Client gerado pelo prisma generate (roda no postinstall).
+src/infra/database/prisma/generated

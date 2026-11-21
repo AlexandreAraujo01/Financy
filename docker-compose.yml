@@ -11,5 +11,16 @@ services:
     volumes:
       - financy_pg_data:/bitnami/postgresql
 
+  # Banco dos testes de integração; sem volume, os dados somem quando o container cai.
+  db-test:
+    image: bitnami/postgresql:latest
+    container_name: financy-db-test
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRESQL_USERNAME: financy
+      POSTGRESQL_PASSWORD: financy
+      POSTGRESQL_DATABASE: financy_test
+
 volumes:
   financy_pg_data:

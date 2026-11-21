@@ -1,0 +1,10 @@
+{
+  // Só o código da aplicação vai pro dist; testes e fakes ficam de fora.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/tests", "src/**/*.spec.ts"]
+}
